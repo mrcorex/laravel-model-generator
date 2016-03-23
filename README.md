@@ -1,7 +1,7 @@
 # Model generator
 Auto-generate models for a Laravel 5 project.
 
-Connects to you existing database and auto-generates models based on existing schema.
+Connects to your existing database and auto-generates models based on existing schema.
  - Support for multiple dababases.
  - Support for magic properties.
  - Support for custom methods.
