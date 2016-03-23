@@ -35,3 +35,6 @@ public function register()
 Options:
  - --database=""            Name of database to generate models from. It will be added to namespace/path for separation of models.
  - --tables=""              Tables to generate (E.g.: --tables="table1,table2"
+
+# TODO
+ - Add SQL for rest of supported drivers.
