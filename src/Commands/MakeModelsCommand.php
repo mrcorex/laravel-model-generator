@@ -3,6 +3,7 @@
 namespace CoRex\Generator\Commands;
 
 use Illuminate\Console\GeneratorCommand;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
 class MakeModelsCommand extends GeneratorCommand
