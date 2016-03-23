@@ -1,21 +1,26 @@
 {
-  "name": "mrcorex/laravel-model-generator",
-  "description": "Auto-generate models for a Laravel 5 project.",
-  "keywords": ["laravel", "model", "schema", "generator"],
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "CoRex",
-      "email": "dev@corex.dk"
+    "name": "mrcorex/laravel-model-generator",
+    "description": "Auto-generate models for a Laravel 5 project.",
+    "keywords": [
+        "laravel",
+        "model",
+        "magic",
+        "generator"
+    ],
+    "minimum-stability": "stable",
+    "authors": [
+        {
+            "name": "CoRex",
+            "email": "dev@corex.dk",
+            "role": "Project Founder"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "CoRex\\Generator\\": "src/"
+        }
     }
-  ],
-  "require": {
-    "php": ">=5.4.0",
-    "illuminate/support": "~5.0"
-  },
-  "autoload": {
-    "psr-4": {
-      "CoRex\\Generator\\": "src/"
-    }
-  }
 }
