@@ -1,0 +1,15 @@
+<?php
+
+namespace {{namespace}};
+
+use {{extends}};
+
+/**
+ * Class {{class}}
+ *
+{{properties}}
+ */
+class {{class}} extends {{shortNameExtends}}
+{
+{{table}}{{primaryKey}}{{timestamps}}{{fillable}}{{guarded}}    /* ---- Everything after this line will be preserved. ---- */
+}
