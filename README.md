@@ -14,7 +14,7 @@ Add a configuration-file called corex and add following code to it. Modify it to
 return [
     'laravel-model-generator' => [
         'path' => base_path('app/Models'),
-        'namespace' => 'App/Models'
+        'namespace' => 'App\Models'
     ]
 ];
 ```
