@@ -85,10 +85,6 @@ class MakeModelsCommand extends GeneratorCommand
      */
     public function fire()
     {
-        if ($this->option('database') === null) {
-            throw new \Exception('Database must be specified.');
-        }
-
         if (config('corex.laravel-model-generator.path') === null) {
             throw new \Exception('You must set up path for laravel-model-generator. [corex.laravel-model-generator.path].');
         }
@@ -96,7 +92,7 @@ class MakeModelsCommand extends GeneratorCommand
             throw new \Exception('You must set up namespace for laravel-model-generator. [corex.laravel-model-generator.namespace].');
         }
 
-        $database = $this->option('database');
+        $database = $this->argument('database');
         $this->stub = file_get_contents($this->getStub());
 
         // Tables.
@@ -209,7 +205,9 @@ class MakeModelsCommand extends GeneratorCommand
      */
     protected function getArguments()
     {
-        return [];
+        return [
+            ['database', InputArgument::REQUIRED, 'Name of database']
+        ];
     }
 
     /**
@@ -220,13 +218,6 @@ class MakeModelsCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
-            [
-                'database',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Name of database to generate models from.' . ' If specified, it will be added to namespace/path for separation of models.',
-                null
-            ],
             ['tables', null, InputOption::VALUE_REQUIRED, 'Comma separated table names to generate', null]
         ];
     }
