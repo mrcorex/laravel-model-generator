@@ -87,18 +87,22 @@ class MakeModelsCommand extends GeneratorCommand
     public function fire()
     {
         if (config('corex.laravel-model-generator.path') === null) {
-            throw new \Exception('You must set up path for laravel-model-generator. [corex.laravel-model-generator.path].');
+            throw new \Exception('You must set up path. [corex.laravel-model-generator.path].');
         }
         if (config('corex.laravel-model-generator.namespace') === null) {
-            throw new \Exception('You must set up namespace for laravel-model-generator. [corex.laravel-model-generator.namespace].');
+            throw new \Exception('You must set up namespace. [corex.laravel-model-generator.namespace].');
+        }
+        if (config('corex.laravel-model-generator.databaseSubDirectory') === null) {
+            throw new \Exception('You must set true/false if models for database should go into separate directories. [corex.laravel-model-generator.databaseSubDirectory].');
         }
 
         $database = $this->argument('database');
+        $tables = $this->argument('tables');
         $this->stub = file_get_contents($this->getStub());
 
         // Tables.
-        if ($this->option('tables')) {
-            $tables = explode(',', $this->option('tables'));
+        if ($tables != '.') {
+            $tables = explode(',', $tables);
         } else {
             $tables = $this->getTables($database);
         }
@@ -207,7 +211,8 @@ class MakeModelsCommand extends GeneratorCommand
     protected function getArguments()
     {
         return [
-            ['database', InputArgument::REQUIRED, 'Name of database']
+            ['database', InputArgument::REQUIRED, 'Name of database.'],
+            ['tables', InputArgument::REQUIRED, 'Comma separated table names to generate. Specify "." to generate all.']
         ];
     }
 
@@ -219,7 +224,6 @@ class MakeModelsCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
-            ['tables', null, InputOption::VALUE_REQUIRED, 'Comma separated table names to generate', null]
         ];
     }
 
@@ -517,8 +521,11 @@ class MakeModelsCommand extends GeneratorCommand
      */
     private function buildFilename($database, $table)
     {
+        $databaseSubDirectory = config('corex.laravel-model-generator.databaseSubDirectory');
         $path = config('corex.laravel-model-generator.path');
-        $path .= '/' . ucfirst($database);
+        if ($databaseSubDirectory) {
+            $path .= '/' . ucfirst($database);
+        }
         $path .= '/' . $this->buildClassName($table);
         $path .= '.php';
         return $path;
