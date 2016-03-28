@@ -14,7 +14,8 @@ Add a configuration-file called corex and add following code to it. Modify it to
 return [
     'laravel-model-generator' => [
         'path' => base_path('app/Models'),
-        'namespace' => 'App\Models'
+        'namespace' => 'App\Models',
+        'databaseSubDirectory' => true
     ]
 ];
 ```
@@ -32,9 +33,9 @@ public function register()
 # Help & Options
 ```php artisan help make:models```
 
-Options:
- - --database=""            Name of database to generate models from. It will be added to namespace/path for separation of models.
- - --tables=""              Tables to generate (E.g.: --tables="table1,table2"
+Arguments:
+ - database: Name of database to generate models from. It will be added to namespace/path for separation of models. It is possible to disable this.
+ - tables: Comma separated table names to generate. Specify "." to generate all.
 
 # TODO
  - Add SQL for rest of supported drivers.
