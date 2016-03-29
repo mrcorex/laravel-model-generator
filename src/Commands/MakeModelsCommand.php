@@ -169,6 +169,8 @@ class MakeModelsCommand extends GeneratorCommand
         $model = end($classParts);
         $stub = str_replace('{{shortNameExtends}}', $model, $stub);
 
+        $stub = str_replace('{{connection}}', $this->indent . 'protected $connection = \'' . $database . '\';' . "\n\n", $stub);
+
         $stub = str_replace('{{table}}', $this->indent . 'protected $table = \'' . $table . '\';' . "\n\n", $stub);
 
         $primaryKey = '';
