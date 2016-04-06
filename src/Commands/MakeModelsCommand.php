@@ -95,6 +95,9 @@ class MakeModelsCommand extends GeneratorCommand
         if (config('corex.laravel-model-generator.databaseSubDirectory') === null) {
             throw new \Exception('You must set true/false if models for database should go into separate directories. [corex.laravel-model-generator.databaseSubDirectory].');
         }
+        if (config('corex.laravel-model-generator.tablePublic') === null) {
+            throw new \Exception('You must set true/false if table property should be public after generation. [corex.laravel-model-generator.tablePublic].');
+        }
 
         $database = $this->argument('database');
         $tables = $this->argument('tables');
@@ -171,7 +174,11 @@ class MakeModelsCommand extends GeneratorCommand
 
         $stub = str_replace('{{connection}}', $this->indent . 'protected $connection = \'' . $database . '\';' . "\n\n", $stub);
 
-        $stub = str_replace('{{table}}', $this->indent . 'protected $table = \'' . $table . '\';' . "\n\n", $stub);
+        $tableVisiblity = 'protected';
+        if (config('corex.laravel-model-generator.tablePublic')) {
+            $tableVisiblity = 'public';
+        }
+        $stub = str_replace('{{table}}', $this->indent . $tableVisiblity . ' $table = \'' . $table . '\';' . "\n\n", $stub);
 
         $primaryKey = '';
         if ($properties['primaryKey']) {
