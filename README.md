@@ -15,7 +15,8 @@ return [
     'laravel-model-generator' => [
         'path' => base_path('app/Models'),
         'namespace' => 'App\Models',
-        'databaseSubDirectory' => true
+        'databaseSubDirectory' => true,
+        'tablePublic' => false
     ]
 ];
 ```
@@ -30,7 +31,7 @@ public function register()
 }
 ```
 
-# Help & Options
+# Help
 ```php artisan help make:models```
 
 Arguments:

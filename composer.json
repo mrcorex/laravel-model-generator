@@ -1,6 +1,6 @@
 {
     "name": "mrcorex/laravel-model-generator",
-	"license": "MIT",
+    "license": "MIT",
     "description": "Auto-generate models for a Laravel 5 project.",
     "keywords": [
         "laravel",
