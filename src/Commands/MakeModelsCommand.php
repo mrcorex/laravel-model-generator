@@ -101,6 +101,11 @@ class MakeModelsCommand extends GeneratorCommand
 
         $database = $this->argument('database');
         $tables = $this->argument('tables');
+        $guardedFields = $this->option('guarded');
+        if ($guardedFields === null) {
+            $guardedFields = '';
+        }
+        $guardedFields = explode(',', $guardedFields);
         $this->stub = file_get_contents($this->getStub());
 
         // Tables.
@@ -113,7 +118,7 @@ class MakeModelsCommand extends GeneratorCommand
         // Make models.
         if (count($tables) > 0) {
             foreach ($tables as $table) {
-                $this->makeModel($database, $table);
+                $this->makeModel($database, $table, $guardedFields);
             }
         }
     }
@@ -123,14 +128,15 @@ class MakeModelsCommand extends GeneratorCommand
      *
      * @param string $database
      * @param string $table
+     * @param string $guardedFields
      * @throws \Exception
      */
-    protected function makeModel($database, $table)
+    protected function makeModel($database, $table, $guardedFields)
     {
         $filename = $this->buildFilename($database, $table);
         $this->makeDirectory($filename);
         $preservedLines = $this->getPreservedLines($filename);
-        $classContent = $this->replaceTokens($database, $table, $preservedLines);
+        $classContent = $this->replaceTokens($database, $table, $preservedLines, $guardedFields);
         if ($classContent != '') {
             $this->files->put($filename, $classContent);
             $this->info('Model [' . $filename . '] created.');
@@ -145,16 +151,17 @@ class MakeModelsCommand extends GeneratorCommand
      * @param string $database
      * @param string $table
      * @param array $preservedLines
+     * @param string $guardedFields
      * @return mixed|string
      */
-    protected function replaceTokens($database, $table, $preservedLines)
+    protected function replaceTokens($database, $table, $preservedLines, $guardedFields)
     {
         $class = $this->buildClassName($table);
         $namespace = $this->buildNamespace($database);
         $extends = $this->extends;
         $stub = $this->stub;
 
-        $properties = $this->getTableProperties($database, $table);
+        $properties = $this->getTableProperties($database, $table, $guardedFields);
         if (count($properties['fillable']) == 0) {
             return '';
         }
@@ -233,6 +240,7 @@ class MakeModelsCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
+            ['guarded', null, InputOption::VALUE_OPTIONAL, 'Comma separated list of guarded fields.', null]
         ];
     }
 
@@ -286,10 +294,11 @@ class MakeModelsCommand extends GeneratorCommand
      *
      * @param string $database
      * @param string $table
+     * @param string $guardedFields
      * @return array
      * @throws \Exception
      */
-    protected function getTableProperties($database, $table)
+    protected function getTableProperties($database, $table, $guardedFields)
     {
         $primaryKey = $this->getTablePrimaryKey($database, $table);
         $primaryKey = $primaryKey != 'id' ? $primaryKey : null;
@@ -300,7 +309,11 @@ class MakeModelsCommand extends GeneratorCommand
 
         $columns = $this->getTableColumns($database, $table);
         foreach ($columns as $column) {
-            $fillable[] = $column->name;
+            if (in_array($column->name, $guardedFields)) {
+                $guarded[] = $column->name;
+            } else {
+                $fillable[] = $column->name;
+            }
         }
 
         return [
