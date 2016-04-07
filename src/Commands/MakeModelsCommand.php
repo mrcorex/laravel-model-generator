@@ -2,6 +2,7 @@
 
 namespace CoRex\Generator\Commands;
 
+use CoRex\Generator\Helpers\Convention;
 use Illuminate\Console\GeneratorCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -20,7 +21,7 @@ class MakeModelsCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $description = 'Generate models from existing schema.';
+    protected $description = 'Generate model(s) from existing schema';
 
     /**
      * Default model namespace.
@@ -546,7 +547,7 @@ class MakeModelsCommand extends GeneratorCommand
         $databaseSubDirectory = config('corex.laravel-model-generator.databaseSubDirectory');
         $path = config('corex.laravel-model-generator.path');
         if ($databaseSubDirectory) {
-            $path .= '/' . ucfirst($database);
+            $path .= '/' . Convention::getPascalCase($database);
         }
         $path .= '/' . $this->buildClassName($table);
         $path .= '.php';
