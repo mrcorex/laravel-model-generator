@@ -5,6 +5,7 @@ Connects to your existing database and auto-generates models based on existing s
  - Support for multiple dababases.
  - Support for magic properties.
  - Support for custom methods.
+ - Support for guarded fields.
 
 # Installation
 Add ```"mrcorex/laravel-model-generator": "^1"``` to your composer.json file.
@@ -20,6 +21,12 @@ return [
     ]
 ];
 ```
+
+Settings:
+ - **path** - where model-files are saved.
+ - **namespace** - namespace of models.
+ - **databaseSubDirectory** - true/false if name of database-connection should be applied to namespace/directory.
+ - **tablePublic** - true/false if propery 'table' should be public instead of protected.
 
 To register it and make sure you have this option available for development only, add following code to AppServiceProviders@register.
 ```php
@@ -37,6 +44,9 @@ public function register()
 Arguments:
  - database: Name of database to generate models from. It will be added to namespace/path for separation of models. It is possible to disable this.
  - tables: Comma separated table names to generate. Specify "." to generate all.
+
+Options:
+ - guarded: Comma separated list of guarded fields.
 
 # TODO
  - Add SQL for rest of supported drivers.
