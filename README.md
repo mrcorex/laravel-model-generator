@@ -23,9 +23,9 @@ return [
 ```
 
 Settings:
- - **path** - where model-files are saved.
+ - **path** - where models are saved.
  - **namespace** - namespace of models.
- - **databaseSubDirectory** - true/false if name of database-connection should be applied to namespace/directory.
+ - **databaseSubDirectory** - true/false if name of database-connection should be applied to namespace/directory. Name will automatically be converted to PascalCase.
  - **tablePublic** - true/false if propery 'table' should be public instead of protected.
 
 To register it and make sure you have this option available for development only, add following code to AppServiceProviders@register.
