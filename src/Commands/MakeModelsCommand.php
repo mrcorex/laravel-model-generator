@@ -99,6 +99,9 @@ class MakeModelsCommand extends GeneratorCommand
         if (config('corex.laravel-model-generator.tablePublic') === null) {
             throw new \Exception('You must set true/false if table property should be public after generation. [corex.laravel-model-generator.tablePublic].');
         }
+        if (config('corex.laravel-model-generator.extends') === null) {
+            throw new \Exception('You must specify extends. [corex.laravel-model-generator.extends].');
+        }
 
         $database = $this->argument('database');
         $tables = $this->argument('tables');
@@ -159,7 +162,7 @@ class MakeModelsCommand extends GeneratorCommand
     {
         $class = $this->buildClassName($table);
         $namespace = $this->buildNamespace($database);
-        $extends = $this->extends;
+        $extends = $this->getExtend();
         $stub = $this->stub;
 
         $properties = $this->getTableProperties($database, $table, $guardedFields);
@@ -383,8 +386,11 @@ class MakeModelsCommand extends GeneratorCommand
         $driver = $this->getDatabaseDriver($database);
         switch ($driver) {
             case 'mysql':
-                $sql = "SELECT COLUMN_NAME AS `name`";
-                $sql .= ", DATA_TYPE AS `type`";
+	            $sql = "SELECT COLUMN_NAME AS `name`";
+	            $sql .= ", DATA_TYPE AS `type`";
+	            $sql .= ", COLUMN_TYPE AS `column_type`";
+	            $sql .= ", IS_NULLABLE AS `is_nullable`";
+	            $sql .= ", COLUMN_DEFAULT AS `default`";
                 $sql .= " FROM INFORMATION_SCHEMA.COLUMNS";
                 $sql .= " WHERE TABLE_SCHEMA = DATABASE()";
                 $sql .= " AND TABLE_NAME = '" . $table . "'";
@@ -476,7 +482,7 @@ class MakeModelsCommand extends GeneratorCommand
                 $type = $type == 'smallint' ? 'int' : $type;
                 $type = $type == 'timestamp' ? 'int' : $type;
 
-                $properties[] = ' * @property ' . $type . ' ' . $name . '.';
+                $properties[] = ' * @property ' . $type . ' ' . $name . '. [' . $this->getAttributes($column) . ']';
             }
         }
         return $properties;
@@ -552,5 +558,33 @@ class MakeModelsCommand extends GeneratorCommand
         $path .= '/' . $this->buildClassName($table);
         $path .= '.php';
         return $path;
+    }
+
+    /**
+     * Get attributes for a column.
+     *
+     * @param array $column
+     * @return string
+     */
+    private function getAttributes($column)
+    {
+        $attributes = 'TYPE=' . strtoupper($column->column_type);
+        $attributes .= ', NULLABLE=' . intval($column->column_type == 'YES');
+        $attributes .= ', DEFAULT="' . $column->default . '"';
+        return $attributes;
+    }
+
+    /**
+     * Get "extends".
+     *
+     * @return string
+     */
+    private function getExtend()
+    {
+        $extends = config('corex.laravel-model-generator.extends');
+        if ($extends !== null && trim($extends) != '') {
+            return $extends;
+        }
+        return $this->extends;
     }
 }

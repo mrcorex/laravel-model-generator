@@ -6,6 +6,8 @@ Connects to your existing database and auto-generates models based on existing s
  - Support for magic properties.
  - Support for custom methods.
  - Support for guarded fields.
+ - Support for "extends".
+ - Support for addition column-attributes after magic properties.
 
 # Installation
 Add ```"mrcorex/laravel-model-generator": "^1"``` to your composer.json file.
@@ -17,7 +19,8 @@ return [
         'path' => base_path('app/Models'),
         'namespace' => 'App\Models',
         'databaseSubDirectory' => true,
-        'tablePublic' => false
+        'tablePublic' => false,
+        'extends' => ''
     ]
 ];
 ```
