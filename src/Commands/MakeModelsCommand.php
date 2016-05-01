@@ -88,19 +88,26 @@ class MakeModelsCommand extends GeneratorCommand
     public function fire()
     {
         if (config('corex.laravel-model-generator.path') === null) {
-            throw new \Exception('You must set up path. [corex.laravel-model-generator.path].');
+            $message = 'You must set up path. [corex.laravel-model-generator.path].';
+            throw new \Exception($message);
         }
         if (config('corex.laravel-model-generator.namespace') === null) {
-            throw new \Exception('You must set up namespace. [corex.laravel-model-generator.namespace].');
+            $message = 'You must set up namespace. [corex.laravel-model-generator.namespace].';
+            throw new \Exception($message);
         }
         if (config('corex.laravel-model-generator.databaseSubDirectory') === null) {
-            throw new \Exception('You must set true/false if models for database should go into separate directories. [corex.laravel-model-generator.databaseSubDirectory].');
+            $message = 'You must set true/false if models for database should go into separate directories.';
+            $message .= '[corex.laravel-model-generator.databaseSubDirectory].';
+            throw new \Exception($message);
         }
         if (config('corex.laravel-model-generator.tablePublic') === null) {
-            throw new \Exception('You must set true/false if table property should be public after generation. [corex.laravel-model-generator.tablePublic].');
+            $message = 'You must set true/false if table property should be public after generation.';
+            $message .= '[corex.laravel-model-generator.tablePublic].';
+            throw new \Exception($message);
         }
         if (config('corex.laravel-model-generator.extends') === null) {
-            throw new \Exception('You must specify extends. [corex.laravel-model-generator.extends].');
+            $message = 'You must specify extends. [corex.laravel-model-generator.extends].';
+            throw new \Exception($message);
         }
 
         $database = $this->argument('database');
@@ -158,7 +165,7 @@ class MakeModelsCommand extends GeneratorCommand
      * @param string $guardedFields
      * @return mixed|string
      */
-    protected function replaceTokens($database, $table, $preservedLines, $guardedFields)
+    protected function replaceTokens($database, $table, array $preservedLines, $guardedFields)
     {
         $class = $this->buildClassName($table);
         $namespace = $this->buildNamespace($database);
@@ -183,13 +190,21 @@ class MakeModelsCommand extends GeneratorCommand
         $model = end($classParts);
         $stub = str_replace('{{shortNameExtends}}', $model, $stub);
 
-        $stub = str_replace('{{connection}}', $this->indent . 'protected $connection = \'' . $database . '\';' . "\n\n", $stub);
+        $stub = str_replace(
+            '{{connection}}',
+            $this->indent . 'protected $connection = \'' . $database . '\';' . "\n\n",
+            $stub
+        );
 
         $tableVisiblity = 'protected';
         if (config('corex.laravel-model-generator.tablePublic')) {
             $tableVisiblity = 'public';
         }
-        $stub = str_replace('{{table}}', $this->indent . $tableVisiblity . ' $table = \'' . $table . '\';' . "\n\n", $stub);
+        $stub = str_replace(
+            '{{table}}',
+            $this->indent . $tableVisiblity . ' $table = \'' . $table . '\';' . "\n\n",
+            $stub
+        );
 
         $primaryKey = '';
         if ($properties['primaryKey']) {
@@ -198,7 +213,11 @@ class MakeModelsCommand extends GeneratorCommand
         $stub = str_replace('{{primaryKey}}', $primaryKey, $stub);
 
         $timestamps = $properties['timestamps'] ? 'true' : 'false';
-        $stub = str_replace('{{timestamps}}', $this->indent . 'public $timestamps = ' . $timestamps . ';' . "\n\n", $stub);
+        $stub = str_replace(
+            '{{timestamps}}',
+            $this->indent . 'public $timestamps = ' . $timestamps . ';' . "\n\n",
+            $stub
+        );
 
         $fillable = 'protected $fillable = ' . $this->convertArrayToString($properties['fillable']);
         $stub = str_replace('{{fillable}}', $this->indent . $fillable . ';' . "\n\n", $stub);
@@ -386,11 +405,11 @@ class MakeModelsCommand extends GeneratorCommand
         $driver = $this->getDatabaseDriver($database);
         switch ($driver) {
             case 'mysql':
-	            $sql = "SELECT COLUMN_NAME AS `name`";
-	            $sql .= ", DATA_TYPE AS `type`";
-	            $sql .= ", COLUMN_TYPE AS `column_type`";
-	            $sql .= ", IS_NULLABLE AS `is_nullable`";
-	            $sql .= ", COLUMN_DEFAULT AS `default`";
+                $sql = "SELECT COLUMN_NAME AS `name`";
+                $sql .= ", DATA_TYPE AS `type`";
+                $sql .= ", COLUMN_TYPE AS `column_type`";
+                $sql .= ", IS_NULLABLE AS `is_nullable`";
+                $sql .= ", COLUMN_DEFAULT AS `default`";
                 $sql .= " FROM INFORMATION_SCHEMA.COLUMNS";
                 $sql .= " WHERE TABLE_SCHEMA = DATABASE()";
                 $sql .= " AND TABLE_NAME = '" . $table . "'";
@@ -439,7 +458,7 @@ class MakeModelsCommand extends GeneratorCommand
      * @param array $array
      * @return string
      */
-    private function convertArrayToString($array)
+    private function convertArrayToString(array $array)
     {
         $string = '[';
         if (!empty($array)) {
@@ -461,7 +480,7 @@ class MakeModelsCommand extends GeneratorCommand
      * @return array
      * @throws \Exception
      */
-    private function getDocProperties($database, $table, $fillable)
+    private function getDocProperties($database, $table, array $fillable)
     {
         $properties = [];
         $columns = $this->getTableColumns($database, $table);
@@ -566,7 +585,7 @@ class MakeModelsCommand extends GeneratorCommand
      * @param array $column
      * @return string
      */
-    private function getAttributes($column)
+    private function getAttributes(array $column)
     {
         $attributes = 'TYPE=' . strtoupper($column->column_type);
         $attributes .= ', NULLABLE=' . intval($column->column_type == 'YES');
