@@ -587,7 +587,6 @@ class MakeModelsCommand extends GeneratorCommand
      */
     private function getAttributes($column)
     {
-	    d($column);
         $attributes = 'TYPE=' . strtoupper($column->column_type);
         $attributes .= ', NULLABLE=' . intval($column->column_type == 'YES');
         $attributes .= ', DEFAULT="' . $column->default . '"';
