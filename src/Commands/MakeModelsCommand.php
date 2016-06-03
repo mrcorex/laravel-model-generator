@@ -100,11 +100,6 @@ class MakeModelsCommand extends GeneratorCommand
             $message .= '[corex.laravel-model-generator.databaseSubDirectory].';
             throw new \Exception($message);
         }
-        if (config('corex.laravel-model-generator.tablePublic') === null) {
-            $message = 'You must set true/false if table property should be public after generation.';
-            $message .= '[corex.laravel-model-generator.tablePublic].';
-            throw new \Exception($message);
-        }
         if (config('corex.laravel-model-generator.extends') === null) {
             $message = 'You must specify extends. [corex.laravel-model-generator.extends].';
             throw new \Exception($message);
@@ -196,13 +191,9 @@ class MakeModelsCommand extends GeneratorCommand
             $stub
         );
 
-        $tableVisiblity = 'protected';
-        if (config('corex.laravel-model-generator.tablePublic')) {
-            $tableVisiblity = 'public';
-        }
         $stub = str_replace(
             '{{table}}',
-            $this->indent . $tableVisiblity . ' $table = \'' . $table . '\';' . "\n\n",
+            $this->indent . 'protected $table = \'' . $table . '\';' . "\n\n",
             $stub
         );
 
