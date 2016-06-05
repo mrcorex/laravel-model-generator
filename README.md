@@ -8,6 +8,7 @@ Connects to your existing database and auto-generates models based on existing s
  - Support for guarded fields.
  - Support for "extends".
  - Support for addition column-attributes after magic properties.
+ - Support for building constants in model.
 
 # Installation
 Add ```"mrcorex/laravel-model-generator": "^1"``` to your composer.json file.
@@ -19,8 +20,22 @@ return [
         'path' => base_path('app/Models'),
         'namespace' => 'App\Models',
         'databaseSubDirectory' => true,
-        'tablePublic' => false,
-        'extends' => ''
+        'extends' => '',
+        'const' => [
+            'connections' => [
+                '{mysql}' => [
+                    '{table}' => [
+                        'id' => '{id}',
+                        'name' => '{name}',
+                        'prefix' => '{prefix}',
+                        'suffix' => '{suffix}',
+                        'replace' => [
+                            'XXXX' => 'YYYY',
+                        ]
+                    ]
+                ]
+            ]
+        ]
     ]
 ];
 ```
@@ -29,7 +44,15 @@ Settings:
  - **path** - where models are saved.
  - **namespace** - namespace of models.
  - **databaseSubDirectory** - true/false if name of database-connection should be applied to namespace/directory. Name will automatically be converted to PascalCase.
- - **tablePublic** - true/false if propery 'table' should be public instead of protected.
+ - **extends** - class to extend instead of "Illuminate\Database\Eloquent\Model".
+ - **const** - (optional) This section is used to specify connections and tables which should contains constants from content of table.
+ - **{mysql}** - (optional) Name of connection.
+ - **{table}** - (optional) Name of table.
+ - **{id}** - (required) Name of field to get id from used in constant as value.
+ - **{name}** - (required) Name of field to get name of constant.
+ - **{prefix}** - (optional) Prefix to add to each name of constant.
+ - **{suffix}** - (optional) Suffix to add to each name of constant.
+ - **replace** - (optional) Values to replace in name of constant.
 
 To register it and make sure you have this option available for development only, add following code to AppServiceProviders@register.
 ```php

@@ -70,7 +70,7 @@ class MakeModelsCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $preserved = '/* ---- Everything after this line will be preserved. ---- */';
+    protected $preserved = '/' . '* ---- Everything after this line will be preserved. ---- *' . '/';
 
     /**
      * Stub.
@@ -78,6 +78,17 @@ class MakeModelsCommand extends GeneratorCommand
      * @var
      */
     private $stub;
+
+    /**
+     * Standard characters to be replaced.
+     *
+     * @var array
+     */
+    private $standardReplace = [
+        'Æ' => 'AE',
+        'Ø' => 'OE',
+        'Å' => 'AA'
+    ];
 
     /**
      * Execute the console command.
@@ -115,6 +126,7 @@ class MakeModelsCommand extends GeneratorCommand
         $this->stub = file_get_contents($this->getStub());
 
         // Tables.
+        \DB::connection($database)->setFetchMode(\PDO::FETCH_ASSOC);
         if ($tables != '.') {
             $tables = explode(',', $tables);
         } else {
@@ -171,6 +183,9 @@ class MakeModelsCommand extends GeneratorCommand
         if (count($properties['fillable']) == 0) {
             return '';
         }
+
+        $constants = $this->getConstants($database, $table);
+        $stub = str_replace('{{constants}}', implode("\n", $constants), $stub);
 
         $stub = str_replace('{{namespace}}', $namespace, $stub);
 
@@ -323,10 +338,10 @@ class MakeModelsCommand extends GeneratorCommand
 
         $columns = $this->getTableColumns($database, $table);
         foreach ($columns as $column) {
-            if (in_array($column->name, $guardedFields)) {
-                $guarded[] = $column->name;
+            if (in_array($column['name'], $guardedFields)) {
+                $guarded[] = $column['name'];
             } else {
-                $fillable[] = $column->name;
+                $fillable[] = $column['name'];
             }
         }
 
@@ -377,7 +392,7 @@ class MakeModelsCommand extends GeneratorCommand
         }
 
         if (count($primaryKeyResult) == 1) {
-            return $primaryKeyResult[0]->COLUMN_NAME;
+            return $primaryKeyResult[0]['COLUMN_NAME'];
         }
 
         return null;
@@ -476,11 +491,11 @@ class MakeModelsCommand extends GeneratorCommand
         $properties = [];
         $columns = $this->getTableColumns($database, $table);
         foreach ($columns as $column) {
-            if (in_array($column->name, $fillable)) {
-                $name = $column->name;
+            if (in_array($column['name'], $fillable)) {
+                $name = $column['name'];
 
                 // Convert types.
-                $type = $column->type;
+                $type = $column['type'];
                 $type = $type == 'varchar' ? 'string' : $type;
                 $type = $type == 'longblob' ? 'string' : $type;
                 $type = $type == 'longtext' ? 'string' : $type;
@@ -578,9 +593,9 @@ class MakeModelsCommand extends GeneratorCommand
      */
     private function getAttributes($column)
     {
-        $attributes = 'TYPE=' . strtoupper($column->column_type);
-        $attributes .= ', NULLABLE=' . intval($column->column_type == 'YES');
-        $attributes .= ', DEFAULT="' . $column->default . '"';
+        $attributes = 'TYPE=' . strtoupper($column['column_type']);
+        $attributes .= ', NULLABLE=' . intval($column['column_type'] == 'YES');
+        $attributes .= ', DEFAULT="' . $column['default'] . '"';
         return $attributes;
     }
 
@@ -596,5 +611,135 @@ class MakeModelsCommand extends GeneratorCommand
             return $extends;
         }
         return $this->extends;
+    }
+
+    /**
+     * Get constants.
+     *
+     * @param string $database
+     * @param string $table
+     * @return array
+     * @throws \Exception
+     */
+    private function getConstants($database, $table)
+    {
+        $constSettings = $this->getConstSettings($database, $table);
+        $constants = [];
+        if ($constSettings !== null) {
+
+            // Extract name of fields.
+            if (!isset($constSettings['id'])) {
+                throw new \Exception('Field "id" not set.');
+            }
+            if (!isset($constSettings['name'])) {
+                throw new \Exception('Field "name" not set.');
+            }
+            $idField = $constSettings['id'];
+            $nameField = $constSettings['name'];
+            $prefix = isset($constSettings['prefix']) ? (string)$constSettings['prefix'] : '';
+            $suffix = isset($constSettings['suffix']) ? (string)$constSettings['suffix'] : '';
+            $replace = isset($constSettings['replace']) ? $constSettings['replace'] : [];
+
+            // Get data.
+            $query = \DB::connection($database)->table($table);
+            if ($idField != '') {
+                $query->orderBy($idField);
+            }
+            $rows = $query->get();
+            if (count($rows) == 0) {
+                return [];
+            }
+
+            // Determine if value is string.
+            $quotes = $this->ifStringInRows($rows, $idField);
+
+            // Check if fields exists in rows.
+            if (!isset($rows[0][$idField])) {
+                throw new \Exception('Field "' . $idField . '" does not exist in data.');
+            }
+            if (!isset($rows[0][$nameField])) {
+                throw new \Exception('Field "' . $nameField . '" does not exist in data.');
+            }
+
+            // Find constants.
+            $constantArray = [];
+            if (count($rows) > 0) {
+                foreach ($rows as $row) {
+                    $constant = mb_strtoupper($row[$nameField]);
+                    $constant = $this->replaceCharacters($constant, $replace);
+                    $constant = $prefix . $constant . $suffix;
+                    $value = mb_strtoupper($row[$idField]);
+                    if ($quotes) {
+                        $value = '\'' . $value . '\'';
+                    }
+                    $constantArray[$constant] = $value;
+                }
+            }
+
+            // Build constants string.
+            $constants[] = $this->indent . '// Constants.';
+            foreach ($constantArray as $name => $value) {
+                $constants[] = $this->indent . 'const ' . $name . ' = ' . $value . ';';
+            }
+            $constants[] = '';
+            $constants[] = '';
+
+        }
+        return $constants;
+    }
+
+    /**
+     * Replace characters.
+     *
+     * @param string $data
+     * @param array $replace
+     * @return mixed
+     */
+    private function replaceCharacters($data, $replace)
+    {
+        $data = mb_strtoupper($data);
+        $data = str_replace(
+            ['-', '.', ',', ';', ':', ' ', '?', '\'', '"', '#', '%', '&', '/', '\\', '(', ')'],
+            '_',
+            $data
+        );
+        $replace = array_merge($this->standardReplace, $replace);
+        foreach ($replace as $from => $to) {
+            $data = str_replace(mb_strtoupper($from), mb_strtoupper($to), $data);
+        }
+        return $data;
+    }
+
+    /**
+     * Get const settings.
+     *
+     * @param string $database
+     * @param string $table
+     * @return mixed
+     */
+    private function getConstSettings($database, $table)
+    {
+        return config('corex.laravel-model-generator.const.connections.' . $database . '.' . $table);
+    }
+
+    /**
+     * Determine if key in rows is strings.
+     *
+     * @param array $rows
+     * @param string $key
+     * @return boolean
+     */
+    private function ifStringInRows(array $rows, $key)
+    {
+        $stringInRows = false;
+        if (count($rows) == 0) {
+            return $stringInRows;
+        }
+        foreach ($rows as $row) {
+            if (isset($row[$key]) && !is_numeric($row[$key])) {
+                $stringInRows = true;
+            }
+        }
+        return $stringInRows;
     }
 }
