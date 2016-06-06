@@ -22,16 +22,14 @@ return [
         'databaseSubDirectory' => true,
         'extends' => '',
         'const' => [
-            'connections' => [
-                '{mysql}' => [
-                    '{table}' => [
-                        'id' => '{id}',
-                        'name' => '{name}',
-                        'prefix' => '{prefix}',
-                        'suffix' => '{suffix}',
-                        'replace' => [
-                            'XXXX' => 'YYYY',
-                        ]
+            '{mysql}' => [
+                '{table}' => [
+                    'id' => '{id}',
+                    'name' => '{name}',
+                    'prefix' => '{prefix}',
+                    'suffix' => '{suffix}',
+                    'replace' => [
+                        'XXXX' => 'YYYY',
                     ]
                 ]
             ]

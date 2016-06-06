@@ -719,7 +719,7 @@ class MakeModelsCommand extends GeneratorCommand
      */
     private function getConstSettings($database, $table)
     {
-        return config('corex.laravel-model-generator.const.connections.' . $database . '.' . $table);
+        return config('corex.laravel-model-generator.const.' . $database . '.' . $table);
     }
 
     /**
