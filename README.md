@@ -22,7 +22,7 @@ return [
         'databaseSubDirectory' => true,
         'extends' => '',
         'const' => [
-            '{mysql}' => [
+            '{connection}' => [
                 '{table}' => [
                     'id' => '{id}',
                     'name' => '{name}',
@@ -44,7 +44,7 @@ Settings:
  - **databaseSubDirectory** - true/false if name of database-connection should be applied to namespace/directory. Name will automatically be converted to PascalCase.
  - **extends** - class to extend instead of "Illuminate\Database\Eloquent\Model".
  - **const** - (optional) This section is used to specify connections and tables which should contains constants from content of table.
- - **{mysql}** - (optional) Name of connection.
+ - **{connection}** - (optional) Name of connection.
  - **{table}** - (optional) Name of table.
  - **{id}** - (required) Name of field to get id from used in constant as value.
  - **{name}** - (required) Name of field to get name of constant.
