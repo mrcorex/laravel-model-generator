@@ -11,7 +11,7 @@ Connects to your existing database and auto-generates models based on existing s
  - Support for building constants in model.
 
 # Installation
-Add ```"mrcorex/laravel-model-generator": "^1"``` to your composer.json file.
+Run ```"composer require mrcorex/laravel-model-generator"```.
 
 Add a configuration-file called corex and add following code to it. Modify it to suit your needs.
 ```php
