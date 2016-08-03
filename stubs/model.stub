@@ -2,7 +2,7 @@
 
 namespace {{namespace}};
 
-{{extends}}
+{{uses}}
 
 /**
  * Class {{class}}
