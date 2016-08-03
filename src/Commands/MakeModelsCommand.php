@@ -163,8 +163,8 @@ class MakeModelsCommand extends GeneratorCommand
     {
         $filename = $this->buildFilename($database, $table);
         $this->makeDirectory($filename);
-        $preservedLines = $this->getPreservedLines($filename);
-        $classContent = $this->replaceTokens($database, $table, $preservedLines, $guardedFields);
+        list($preservedLines, $preservedUses) = $this->getPreservedLines($filename);
+        $classContent = $this->replaceTokens($database, $table, $preservedLines, $guardedFields, $preservedUses);
         if ($classContent != '') {
             $this->files->put($filename, $classContent);
             $this->info('Model [' . $filename . '] created.');
@@ -180,9 +180,10 @@ class MakeModelsCommand extends GeneratorCommand
      * @param string $table
      * @param array $preservedLines
      * @param string $guardedFields
+     * @param array $preservedUses
      * @return mixed|string
      */
-    protected function replaceTokens($database, $table, array $preservedLines, $guardedFields)
+    protected function replaceTokens($database, $table, array $preservedLines, $guardedFields, array $preservedUses)
     {
         $class = $this->buildClassName($table);
         $namespace = $this->buildNamespace($database);
@@ -199,9 +200,13 @@ class MakeModelsCommand extends GeneratorCommand
 
         $stub = str_replace('{{namespace}}', $namespace, $stub);
 
-        $stub = str_replace('{{extends}}', $extends, $stub);
-
+        if(!count($preservedUses)){
+            $stub = str_replace('{{extends}}', "use " . $extends . ";", $stub);
+        }else{
+            $stub = str_replace('{{extends}}', implode("\n", $preservedUses), $stub);
+        }
         $stub = str_replace('{{class}}', $class, $stub);
+
 
         $docProperties = $this->getDocProperties($database, $table, $properties['fillable']);
         $stub = str_replace('{{properties}}', implode("\n", $docProperties), $stub);
@@ -537,10 +542,14 @@ class MakeModelsCommand extends GeneratorCommand
         }
         $lines = explode("\n", file_get_contents($filename));
         $preservedLines = [];
+        $preservedUses = [];
         $found = false;
         foreach ($lines as $line) {
             if ($line == '}') {
                 continue;
+            }
+            if(stripos($line, "use") === 0){
+                $preservedUses[] = $line;
             }
             if ($found) {
                 $preservedLines[] = $line;
@@ -549,7 +558,7 @@ class MakeModelsCommand extends GeneratorCommand
                 $found = true;
             }
         }
-        return $preservedLines;
+        return [$preservedLines, $preservedUses];
     }
 
     /**
