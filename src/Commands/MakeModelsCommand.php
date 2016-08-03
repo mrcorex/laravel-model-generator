@@ -6,6 +6,7 @@ use CoRex\Generator\Helpers\Convention;
 use Illuminate\Console\GeneratorCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
+use Illuminate\Filesystem\Filesystem;
 
 class MakeModelsCommand extends GeneratorCommand
 {
@@ -89,6 +90,15 @@ class MakeModelsCommand extends GeneratorCommand
         'Ø' => 'OE',
         'Å' => 'AA'
     ];
+
+    public function __construct(Filesystem $files)
+    {
+        parent::__construct($files);
+        $indent = config('corex.laravel-model-generator.indent');
+        if ( $indent ){
+            $this->indent = $indent;
+        }
+    }
 
     /**
      * Execute the console command.
@@ -232,7 +242,7 @@ class MakeModelsCommand extends GeneratorCommand
         $stub = str_replace('{{guarded}}', $this->indent . 'protected $guarded = ' . $guarded . ';' . "\n\n", $stub);
 
         if (count($preservedLines) > 0) {
-            $stub = str_replace($this->preserved, $this->preserved . "\n" . implode("\n", $preservedLines), $stub);
+            $stub = str_replace($this->preserved, $this->indent . $this->preserved . "\n" . implode("\n", $preservedLines), $stub);
         }
 
         return $stub;

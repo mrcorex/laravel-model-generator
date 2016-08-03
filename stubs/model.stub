@@ -11,5 +11,5 @@ use {{extends}};
  */
 class {{class}} extends {{shortNameExtends}}
 {
-{{constants}}{{connection}}{{table}}{{primaryKey}}{{timestamps}}{{fillable}}{{guarded}}    /* ---- Everything after this line will be preserved. ---- */
+{{constants}}{{connection}}{{table}}{{primaryKey}}{{timestamps}}{{fillable}}{{guarded}}/* ---- Everything after this line will be preserved. ---- */
 }
