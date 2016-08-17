@@ -7,8 +7,10 @@ Connects to your existing database and auto-generates models based on existing s
  - Support for custom methods.
  - Support for guarded fields.
  - Support for "extends".
- - Support for addition column-attributes after magic properties.
+ - Support for extra column-attributes after magic properties.
  - Support for building constants in model.
+ - Support for multiple "uses".
+ - Support for custom "indent".
 
 # Installation
 Run ```"composer require mrcorex/laravel-model-generator"```.
@@ -21,6 +23,8 @@ return [
         'namespace' => 'App\Models',
         'databaseSubDirectory' => true,
         'extends' => '',
+        'indent' => "\t",
+        'uses' => [],
         'const' => [
             '{connection}' => [
                 '{table}' => [
@@ -42,7 +46,9 @@ Settings:
  - **path** - where models are saved.
  - **namespace** - namespace of models.
  - **databaseSubDirectory** - true/false if name of database-connection should be applied to namespace/directory. Name will automatically be converted to PascalCase.
- - **extends** - class to extend instead of "Illuminate\Database\Eloquent\Model".
+ - **extends** - (optional) class to extend instead of "Illuminate\Database\Eloquent\Model". Default ''.
+ - **indent** - (optional) String to use as indent i.e. "\t". Default 4 spaces.
+ - **uses** - (optional) List of use's. Warning: it does not clean up old uses, if you change "extends" after model initially was created.
  - **const** - (optional) This section is used to specify connections and tables which should contains constants from content of table.
  - **{connection}** - (optional) Name of connection.
  - **{table}** - (optional) Name of table.
