@@ -6,7 +6,6 @@ use CoRex\Generator\Helpers\Convention;
 use Illuminate\Console\GeneratorCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use Illuminate\Filesystem\Filesystem;
 
 class MakeModelsCommand extends GeneratorCommand
 {
@@ -91,15 +90,6 @@ class MakeModelsCommand extends GeneratorCommand
         'Å' => 'AA'
     ];
 
-    public function __construct(Filesystem $files)
-    {
-        parent::__construct($files);
-        $indent = config('corex.laravel-model-generator.indent');
-        if ($indent) {
-            $this->indent = $indent;
-        }
-    }
-
     /**
      * Execute the console command.
      *
@@ -121,9 +111,11 @@ class MakeModelsCommand extends GeneratorCommand
             $message .= '[corex.laravel-model-generator.databaseSubDirectory].';
             throw new \Exception($message);
         }
-        if (config('corex.laravel-model-generator.extends') === null) {
-            $message = 'You must specify extends. [corex.laravel-model-generator.extends].';
-            throw new \Exception($message);
+
+        // Get indent from config-file and use if exist.
+        $indent = config('corex.laravel-model-generator.indent');
+        if ($indent) {
+            $this->indent = $indent;
         }
 
         $database = $this->argument('database');
@@ -163,8 +155,14 @@ class MakeModelsCommand extends GeneratorCommand
     {
         $filename = $this->buildFilename($database, $table);
         $this->makeDirectory($filename);
-        list($preservedLines, $preservedUses) = $this->getPreservedLines($filename);
-        $classContent = $this->replaceTokens($database, $table, $preservedLines, $guardedFields, $preservedUses);
+        $preservedInformation = $this->getPreservedInformation($filename);
+        $classContent = $this->replaceTokens(
+            $database,
+            $table,
+            $preservedInformation['lines'],
+            $guardedFields,
+            $preservedInformation['uses']
+        );
         if ($classContent != '') {
             $this->files->put($filename, $classContent);
             $this->info('Model [' . $filename . '] created.');
@@ -206,7 +204,6 @@ class MakeModelsCommand extends GeneratorCommand
 
         $stub = str_replace('{{class}}', $class, $stub);
 
-
         $docProperties = $this->getDocProperties($database, $table, $properties['fillable']);
         $stub = str_replace('{{properties}}', implode("\n", $docProperties), $stub);
 
@@ -246,7 +243,11 @@ class MakeModelsCommand extends GeneratorCommand
         $stub = str_replace('{{guarded}}', $this->indent . 'protected $guarded = ' . $guarded . ';' . "\n\n", $stub);
 
         if (count($preservedLines) > 0) {
-            $stub = str_replace($this->preserved, $this->indent . $this->preserved . "\n" . implode("\n", $preservedLines), $stub);
+            $stub = str_replace(
+                $this->preserved,
+                $this->indent . $this->preserved . "\n" . implode("\n", $preservedLines),
+                $stub
+            );
         }
 
         return $stub;
@@ -528,16 +529,19 @@ class MakeModelsCommand extends GeneratorCommand
     }
 
     /**
-     * Get preserved lines.
+     * Get preserved information.
      *
      * @param string $filename
      * @return array
      * @throws \Exception
      */
-    private function getPreservedLines($filename)
+    private function getPreservedInformation($filename)
     {
         if (!file_exists($filename)) {
-            return [[], []];
+            return [
+                'lines' => [],
+                'uses' => []
+            ];
         }
         $lines = explode("\n", file_get_contents($filename));
         $preservedLines = [];
@@ -557,7 +561,10 @@ class MakeModelsCommand extends GeneratorCommand
                 $found = true;
             }
         }
-        return [$preservedLines, $preservedUses];
+        return [
+            'lines' => $preservedLines,
+            'uses' => $preservedUses
+        ];
     }
 
     /**
@@ -636,19 +643,20 @@ class MakeModelsCommand extends GeneratorCommand
      *
      * @param array $preservedUses
      * @return array
+     * @throws \Exception
      */
     private function getUses(array $preservedUses)
     {
         $uses = config('corex.laravel-model-generator.uses') ?: [];
         if (is_array($uses) !== true) {
-            throw new \Exception("Uses setting must be an array");
+            throw new \Exception("Uses setting must be an array.");
         }
         $extends = $this->getExtend();
         if ($extends !== "") {
             $uses[] = $extends;
         }
-        if (count($preservedUses > 0)) {
-            array_merge($uses, $preservedUses);
+        if (count($preservedUses) > 0) {
+            $uses = array_merge($uses, $preservedUses);
         }
         $uniqueUses = array_unique($uses);
         $completeUses = array_map(function ($use) {
@@ -727,7 +735,6 @@ class MakeModelsCommand extends GeneratorCommand
             }
             $constants[] = '';
             $constants[] = '';
-
         }
         return $constants;
     }
@@ -739,7 +746,7 @@ class MakeModelsCommand extends GeneratorCommand
      * @param array $replace
      * @return mixed
      */
-    private function replaceCharacters($data, $replace)
+    private function replaceCharacters($data, array $replace)
     {
         $data = mb_strtoupper($data);
         $data = str_replace(
