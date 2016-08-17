@@ -720,7 +720,7 @@ class MakeModelsCommand extends GeneratorCommand
                     $constant = mb_strtoupper($row[$nameField]);
                     $constant = $this->replaceCharacters($constant, $replace);
                     $constant = $prefix . $constant . $suffix;
-                    $value = mb_strtoupper($row[$idField]);
+                    $value = $row[$idField];
                     if ($quotes) {
                         $value = '\'' . $value . '\'';
                     }
