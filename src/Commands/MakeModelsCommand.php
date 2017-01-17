@@ -118,27 +118,28 @@ class MakeModelsCommand extends GeneratorCommand
             $this->indent = $indent;
         }
 
-        $database = $this->argument('database');
+        $connection = $this->argument('connection');
         $tables = $this->argument('tables');
         $guardedFields = $this->option('guarded');
-        if ($guardedFields === null) {
-            $guardedFields = '';
+        if ($guardedFields !== null && is_string($guardedFields) && $guardedFields != '') {
+            $guardedFields = explode(',', $guardedFields);
+        } else {
+            $guardedFields = [];
         }
-        $guardedFields = explode(',', $guardedFields);
         $this->stub = file_get_contents($this->getStub());
 
         // Tables.
-        \DB::connection($database)->setFetchMode(\PDO::FETCH_ASSOC);
+        \DB::connection($connection)->setFetchMode(\PDO::FETCH_ASSOC);
         if ($tables != '.') {
             $tables = explode(',', $tables);
         } else {
-            $tables = $this->getTables($database);
+            $tables = $this->getTables($connection);
         }
 
         // Make models.
         if (count($tables) > 0) {
             foreach ($tables as $table) {
-                $this->makeModel($database, $table, $guardedFields);
+                $this->makeModel($connection, $table, $guardedFields);
             }
         }
     }
@@ -146,18 +147,18 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Make model.
      *
-     * @param string $database
+     * @param string $connection
      * @param string $table
-     * @param string $guardedFields
+     * @param array $guardedFields
      * @throws \Exception
      */
-    protected function makeModel($database, $table, $guardedFields)
+    protected function makeModel($connection, $table, array $guardedFields)
     {
-        $filename = $this->buildFilename($database, $table);
+        $filename = $this->buildFilename($connection, $table);
         $this->makeDirectory($filename);
         $preservedInformation = $this->getPreservedInformation($filename);
         $classContent = $this->replaceTokens(
-            $database,
+            $connection,
             $table,
             $preservedInformation['lines'],
             $guardedFields,
@@ -174,28 +175,28 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Replace tokens.
      *
-     * @param string $database
+     * @param string $connection
      * @param string $table
      * @param array $preservedLines
-     * @param string $guardedFields
+     * @param array $guardedFields
      * @param array $preservedUses
      * @return mixed|string
      */
-    protected function replaceTokens($database, $table, array $preservedLines, $guardedFields, array $preservedUses)
+    protected function replaceTokens($connection, $table, array $preservedLines, array $guardedFields, array $preservedUses)
     {
         $class = $this->buildClassName($table);
-        $namespace = $this->buildNamespace($database);
+        $namespace = $this->buildNamespace($connection);
         $extends = $this->getExtend();
         $uses = $this->getUses($preservedUses);
 
         $stub = $this->stub;
 
-        $properties = $this->getTableProperties($database, $table, $guardedFields);
+        $properties = $this->getTableProperties($connection, $table, $guardedFields);
         if (count($properties['fillable']) == 0) {
             return '';
         }
 
-        $constants = $this->getConstants($database, $table);
+        $constants = $this->getConstants($connection, $table);
         $stub = str_replace('{{constants}}', implode("\n", $constants), $stub);
 
         $stub = str_replace('{{namespace}}', $namespace, $stub);
@@ -204,7 +205,7 @@ class MakeModelsCommand extends GeneratorCommand
 
         $stub = str_replace('{{class}}', $class, $stub);
 
-        $docProperties = $this->getDocProperties($database, $table, $properties['fillable']);
+        $docProperties = $this->getDocProperties($connection, $table, $properties['fillable']);
         $stub = str_replace('{{properties}}', implode("\n", $docProperties), $stub);
 
         $classParts = explode('\\', $extends);
@@ -213,7 +214,7 @@ class MakeModelsCommand extends GeneratorCommand
 
         $stub = str_replace(
             '{{connection}}',
-            $this->indent . 'protected $connection = \'' . $database . '\';' . "\n\n",
+            $this->indent . 'protected $connection = \'' . $connection . '\';' . "\n\n",
             $stub
         );
 
@@ -271,7 +272,7 @@ class MakeModelsCommand extends GeneratorCommand
     protected function getArguments()
     {
         return [
-            ['database', InputArgument::REQUIRED, 'Name of database.'],
+            ['connection', InputArgument::REQUIRED, 'Name of connection.'],
             ['tables', InputArgument::REQUIRED, 'Comma separated table names to generate. Specify "." to generate all.']
         ];
     }
@@ -291,17 +292,17 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Get list of tables.
      *
-     * @param string $database
+     * @param string $connection
      * @return mixed
      * @throws \Exception
      */
-    private function getTables($database)
+    private function getTables($connection)
     {
         $result = [];
-        $driver = $this->getDatabaseDriver($database);
+        $driver = $this->getConnectionProperty($connection, 'driver');
         switch ($driver) {
             case 'mysql':
-                $tables = \DB::connection($database)->select("SHOW TABLES");
+                $tables = \DB::connection($connection)->select("SHOW TABLES");
                 break;
 
             case 'sqlsrv':
@@ -336,22 +337,22 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Get properties of table.
      *
-     * @param string $database
+     * @param string $connection
      * @param string $table
-     * @param string $guardedFields
+     * @param array $guardedFields
      * @return array
      * @throws \Exception
      */
-    protected function getTableProperties($database, $table, $guardedFields)
+    protected function getTableProperties($connection, $table, array $guardedFields)
     {
-        $primaryKey = $this->getTablePrimaryKey($database, $table);
+        $primaryKey = $this->getTablePrimaryKey($connection, $table);
         $primaryKey = $primaryKey != 'id' ? $primaryKey : null;
 
         $fillable = [];
         $guarded = [];
         $timestamps = false;
 
-        $columns = $this->getTableColumns($database, $table);
+        $columns = $this->getTableColumns($connection, $table);
         foreach ($columns as $column) {
             if (in_array($column['name'], $guardedFields)) {
                 $guarded[] = $column['name'];
@@ -371,14 +372,14 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Get primary key from table.
      *
-     * @param string $database
+     * @param string $connection
      * @param string $table
      * @return string
      * @throws \Exception
      */
-    private function getTablePrimaryKey($database, $table)
+    private function getTablePrimaryKey($connection, $table)
     {
-        $driver = $this->getDatabaseDriver($database);
+        $driver = $this->getConnectionProperty($connection, 'driver');
         switch ($driver) {
             case 'mysql':
                 $sql = "SELECT COLUMN_NAME";
@@ -386,7 +387,7 @@ class MakeModelsCommand extends GeneratorCommand
                 $sql .= " WHERE TABLE_SCHEMA = DATABASE()";
                 $sql .= " AND COLUMN_KEY = 'PRI'";
                 $sql .= " AND TABLE_NAME = '" . $table . "'";
-                $primaryKeyResult = \DB::connection($database)->select($sql);
+                $primaryKeyResult = \DB::connection($connection)->select($sql);
                 break;
 
             case 'sqlsrv':
@@ -416,14 +417,14 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Get columns of table.
      *
-     * @param string $database
+     * @param string $connection
      * @param string $table
      * @return mixed
      * @throws \Exception
      */
-    protected function getTableColumns($database, $table)
+    protected function getTableColumns($connection, $table)
     {
-        $driver = $this->getDatabaseDriver($database);
+        $driver = $this->getConnectionProperty($connection, 'driver');
         switch ($driver) {
             case 'mysql':
                 $sql = "SELECT COLUMN_NAME AS `name`";
@@ -434,7 +435,7 @@ class MakeModelsCommand extends GeneratorCommand
                 $sql .= " FROM INFORMATION_SCHEMA.COLUMNS";
                 $sql .= " WHERE TABLE_SCHEMA = DATABASE()";
                 $sql .= " AND TABLE_NAME = '" . $table . "'";
-                $columns = \DB::connection($database)->select($sql);
+                $columns = \DB::connection($connection)->select($sql);
                 break;
 
             case 'sqlsrv':
@@ -460,17 +461,18 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Get driver of database.
      *
-     * @param string $database
+     * @param string $connection
+     * @param string $property
      * @return string
      * @throws \Exception
      */
-    private function getDatabaseDriver($database)
+    private function getConnectionProperty($connection, $property)
     {
-        $connection = config('database.connections.' . $database);
+        $connection = config('database.connections.' . $connection);
         if ($connection === null) {
-            throw new \Exception('Database [' . $database . '] not found.');
+            throw new \Exception('Connection [' . $connection . '] not found.');
         }
-        return $connection['driver'];
+        return isset($connection[$property]) ? $connection[$property] : null;
     }
 
     /**
@@ -495,16 +497,16 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Get doc properties.
      *
-     * @param string $database
+     * @param string $connection
      * @param string $table
      * @param array $fillable
      * @return array
      * @throws \Exception
      */
-    private function getDocProperties($database, $table, array $fillable)
+    private function getDocProperties($connection, $table, array $fillable)
     {
         $properties = [];
-        $columns = $this->getTableColumns($database, $table);
+        $columns = $this->getTableColumns($connection, $table);
         foreach ($columns as $column) {
             if (in_array($column['name'], $fillable)) {
                 $name = $column['name'];
@@ -668,14 +670,14 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Get constants.
      *
-     * @param string $database
+     * @param string $connection
      * @param string $table
      * @return array
      * @throws \Exception
      */
-    private function getConstants($database, $table)
+    private function getConstants($connection, $table)
     {
-        $constSettings = $this->getConstSettings($database, $table);
+        $constSettings = $this->getConstSettings($connection, $table);
         $constants = [];
         if ($constSettings !== null) {
 
@@ -693,7 +695,7 @@ class MakeModelsCommand extends GeneratorCommand
             $replace = isset($constSettings['replace']) ? $constSettings['replace'] : [];
 
             // Get data.
-            $query = \DB::connection($database)->table($table);
+            $query = \DB::connection($connection)->table($table);
             if ($idField != '') {
                 $query->orderBy($idField);
             }
@@ -703,7 +705,7 @@ class MakeModelsCommand extends GeneratorCommand
             }
 
             // Determine if value is string.
-            $quotes = $this->ifStringInRows($rows, $idField);
+            $quotes = $this->ifStringInRows($rows->toArray(), $idField);
 
             // Check if fields exists in rows.
             if (!isset($rows[0][$idField])) {
@@ -764,13 +766,13 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Get const settings.
      *
-     * @param string $database
+     * @param string $connection
      * @param string $table
      * @return mixed
      */
-    private function getConstSettings($database, $table)
+    private function getConstSettings($connection, $table)
     {
-        return config('corex.laravel-model-generator.const.' . $database . '.' . $table);
+        return config('corex.laravel-model-generator.const.' . $connection . '.' . $table);
     }
 
     /**

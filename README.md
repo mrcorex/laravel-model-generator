@@ -72,7 +72,7 @@ public function register()
 ```php artisan help make:models```
 
 Arguments:
- - database: Name of database to generate models from. It will be added to namespace/path for separation of models. It is possible to disable this.
+ - connection: Name of connection to generate models from. It will be added to namespace/path for separation of models. It is possible to disable this.
  - tables: Comma separated table names to generate. Specify "." to generate all.
 
 Options:
