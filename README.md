@@ -1,7 +1,7 @@
 # Model generator
 Auto-generate models for a Laravel 5 project.
 
-**Note: it is recommended to abandon this package and use corex/lmodel instead. It is more up-to-date and uses doctrine/dbal instead of native sql + other advantages.** 
+**Note: it is recommended to abandon this package and use corex/lmodel instead. It is more up-to-date and uses doctrine/dbal instead of native sql + other advantages. There are a few changes in configuration but easy to convert config to corex/lmodel.** 
 
 Connects to your existing database and auto-generates models based on existing schema.
  - Support for multiple dababases.
