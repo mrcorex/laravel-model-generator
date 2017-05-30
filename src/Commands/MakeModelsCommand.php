@@ -129,7 +129,6 @@ class MakeModelsCommand extends GeneratorCommand
         $this->stub = file_get_contents($this->getStub());
 
         // Tables.
-        \DB::connection($connection)->setFetchMode(\PDO::FETCH_ASSOC);
         if ($tables != '.') {
             $tables = explode(',', $tables);
         } else {
@@ -354,10 +353,10 @@ class MakeModelsCommand extends GeneratorCommand
 
         $columns = $this->getTableColumns($connection, $table);
         foreach ($columns as $column) {
-            if (in_array($column['name'], $guardedFields)) {
-                $guarded[] = $column['name'];
+            if (in_array($column->name, $guardedFields)) {
+                $guarded[] = $column->name;
             } else {
-                $fillable[] = $column['name'];
+                $fillable[] = $column->name;
             }
         }
 
@@ -408,7 +407,7 @@ class MakeModelsCommand extends GeneratorCommand
         }
 
         if (count($primaryKeyResult) == 1) {
-            return $primaryKeyResult[0]['COLUMN_NAME'];
+            return $primaryKeyResult[0]->COLUMN_NAME;
         }
 
         return null;
@@ -508,11 +507,11 @@ class MakeModelsCommand extends GeneratorCommand
         $properties = [];
         $columns = $this->getTableColumns($connection, $table);
         foreach ($columns as $column) {
-            if (in_array($column['name'], $fillable)) {
-                $name = $column['name'];
+            if (in_array($column->name, $fillable)) {
+                $name = $column->name;
 
                 // Convert types.
-                $type = $column['type'];
+                $type = $column->type;
                 $type = $type == 'varchar' ? 'string' : $type;
                 $type = $type == 'longblob' ? 'string' : $type;
                 $type = $type == 'longtext' ? 'string' : $type;
@@ -620,9 +619,9 @@ class MakeModelsCommand extends GeneratorCommand
      */
     private function getAttributes($column)
     {
-        $attributes = 'TYPE=' . strtoupper($column['column_type']);
-        $attributes .= ', NULLABLE=' . intval($column['column_type'] == 'YES');
-        $attributes .= ', DEFAULT="' . $column['default'] . '"';
+        $attributes = 'TYPE=' . strtoupper($column->column_type);
+        $attributes .= ', NULLABLE=' . intval($column->column_type == 'YES');
+        $attributes .= ', DEFAULT="' . $column->default . '"';
         return $attributes;
     }
 
@@ -708,10 +707,10 @@ class MakeModelsCommand extends GeneratorCommand
             $quotes = $this->ifStringInRows($rows->toArray(), $idField);
 
             // Check if fields exists in rows.
-            if (!isset($rows[0][$idField])) {
+            if (!isset($rows[0]->{$idField})) {
                 throw new \Exception('Field "' . $idField . '" does not exist in data.');
             }
-            if (!isset($rows[0][$nameField])) {
+            if (!isset($rows[0]->{$nameField})) {
                 throw new \Exception('Field "' . $nameField . '" does not exist in data.');
             }
 
@@ -719,10 +718,10 @@ class MakeModelsCommand extends GeneratorCommand
             $constantArray = [];
             if (count($rows) > 0) {
                 foreach ($rows as $row) {
-                    $constant = mb_strtoupper($row[$nameField]);
+                    $constant = mb_strtoupper($row->{$nameField});
                     $constant = $this->replaceCharacters($constant, $replace);
                     $constant = $prefix . $constant . $suffix;
-                    $value = $row[$idField];
+                    $value = $row->{$idField};
                     if ($quotes) {
                         $value = '\'' . $value . '\'';
                     }
@@ -789,7 +788,7 @@ class MakeModelsCommand extends GeneratorCommand
             return $stringInRows;
         }
         foreach ($rows as $row) {
-            if (isset($row[$key]) && !is_numeric($row[$key])) {
+            if (isset($row->{$key}) && !is_numeric($row->{$key})) {
                 $stringInRows = true;
             }
         }
