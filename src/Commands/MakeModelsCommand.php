@@ -4,17 +4,18 @@ namespace CoRex\Generator\Commands;
 
 use CoRex\Generator\Helpers\Convention;
 use Illuminate\Console\GeneratorCommand;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
 
 class MakeModelsCommand extends GeneratorCommand
 {
     /**
-     * The console command name.
+     * The name and signature of the console command.
      *
      * @var string
      */
-    protected $name = 'make:models';
+    protected $signature = 'make:models
+        {connection : Name of connection (see config/database.php).}
+        {tables : Comma separated table names to generate. Specify "." to generate all.}
+        {--guarded= : Comma separated list of guarded fields.}';
 
     /**
      * The console command description.
@@ -93,10 +94,9 @@ class MakeModelsCommand extends GeneratorCommand
     /**
      * Execute the console command.
      *
-     * @return mixed
      * @throws \Exception
      */
-    public function fire()
+    public function handle()
     {
         if (config('corex.laravel-model-generator.path') === null) {
             $message = 'You must set up path. [corex.laravel-model-generator.path].';
@@ -180,9 +180,15 @@ class MakeModelsCommand extends GeneratorCommand
      * @param array $guardedFields
      * @param array $preservedUses
      * @return mixed|string
+     * @throws \Exception
      */
-    protected function replaceTokens($connection, $table, array $preservedLines, array $guardedFields, array $preservedUses)
-    {
+    protected function replaceTokens(
+        $connection,
+        $table,
+        array $preservedLines,
+        array $guardedFields,
+        array $preservedUses
+    ) {
         $class = $this->buildClassName($table);
         $namespace = $this->buildNamespace($connection);
         $extends = $this->getExtend();
@@ -261,31 +267,6 @@ class MakeModelsCommand extends GeneratorCommand
     public function getStub()
     {
         return dirname(dirname(__DIR__)) . '/stubs/model.stub';
-    }
-
-    /**
-     * Get the console command arguments.
-     *
-     * @return array
-     */
-    protected function getArguments()
-    {
-        return [
-            ['connection', InputArgument::REQUIRED, 'Name of connection.'],
-            ['tables', InputArgument::REQUIRED, 'Comma separated table names to generate. Specify "." to generate all.']
-        ];
-    }
-
-    /**
-     * Get the console command options.
-     *
-     * @return array
-     */
-    protected function getOptions()
-    {
-        return [
-            ['guarded', null, InputOption::VALUE_OPTIONAL, 'Comma separated list of guarded fields.', null]
-        ];
     }
 
     /**

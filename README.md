@@ -3,6 +3,10 @@ Auto-generate models for a Laravel 5 project.
 
 **Note: it is recommended to abandon this package and use corex/lmodel instead. It is more up-to-date and uses doctrine/dbal instead of native sql + other advantages. There are a few changes in configuration but easy to convert config to corex/lmodel.** 
 
+**You can continue to use this package. I will do my best to support future versions.**
+
+**Only MySQL will be supported.** 
+
 Connects to your existing database and auto-generates models based on existing schema.
  - Support for multiple dababases.
  - Support for magic properties.
@@ -79,6 +83,3 @@ Arguments:
 
 Options:
  - guarded: Comma separated list of guarded fields.
-
-# TODO
- - Add SQL for rest of supported drivers.
